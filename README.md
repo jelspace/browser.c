@@ -20,6 +20,12 @@ Tested on Linux
 screen from firefox
 https://github.com/jelspace/browser.c/blob/main/Screenshot%20from%202025-01-05%2009-01-29.png
 
+type in terminal:
+git clone https://github.com/jelspace/browser.c 
+
+enter dir:
+cd browser
+
 compile with:
  ./compile.sh
  or
