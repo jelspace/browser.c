@@ -22,8 +22,9 @@ https://github.com/jelspace/browser.c/blob/main/Screenshot%20from%202025-01-05%2
 
 compile with:
  ./compile.sh
- 
+ or
  ./make
+ ("./make" is different than "make")
 
 then create video dir:
 mkdir videos
