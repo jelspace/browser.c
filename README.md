@@ -23,6 +23,12 @@ https://github.com/jelspace/browser.c/blob/main/Screenshot%20from%202025-01-05%2
 compile with:
 gcc -o browser main.c main_frame.c bookmarks.c keys.c main_menu.c server.c -Wall `pkg-config --cflags --libs gtk+-3.0 webkit2gtk-4.0 gstreamer-1.0`
 
+then create video dir:
+mkdir videos
+
+and run 'browser'
+./browser
+
 To compile and run the browser application from scratch on a newly installed Linux system, you need to install several dependencies. Below is a list of all the requirements and the steps to install them.
 1. Update the System
 
