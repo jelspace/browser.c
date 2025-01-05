@@ -1,0 +1,613 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Local Video Browser</title>
+    <style>
+        /* Default Theme */
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            transition: background-color 0.3s, color 0.3s;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .video-list {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        .video-item {
+            padding: 10px;
+            border-radius: 10px;
+            transition: background-color 0.3s;
+        }
+        .video-item video {
+            width: 100%;
+            border-radius: 10px;
+        }
+        .video-item p {
+            margin: 10px 0 0;
+            font-size: 14px;
+        }
+        .search-bar {
+            margin-bottom: 20px;
+        }
+        .search-bar input {
+            width: 100%;
+            padding: 10px;
+            border-radius: 5px;
+            border: 1px solid;
+            transition: background-color 0.3s, color 0.3s, border-color 0.3s;
+        }
+        .filters {
+            margin-bottom: 20px;
+            display: flex;
+            gap: 10px;
+        }
+        .filters select {
+            padding: 10px;
+            border-radius: 5px;
+            border: 1px solid;
+            transition: background-color 0.3s, color 0.3s, border-color 0.3s;
+        }
+        .pagination {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            margin-top: 20px;
+        }
+        .pagination button {
+            padding: 10px 15px;
+            border-radius: 5px;
+            border: 1px solid;
+            cursor: pointer;
+            transition: background-color 0.3s, color 0.3s, border-color 0.3s;
+        }
+        .pagination button:disabled {
+            cursor: not-allowed;
+        }
+        .loading-spinner {
+            display: none;
+            justify-content: center;
+            margin: 20px 0;
+        }
+        .loading-spinner.visible {
+            display: flex;
+        }
+        .error-message {
+            text-align: center;
+            margin: 20px 0;
+        }
+        .thumbnail {
+            width: 100%;
+            border-radius: 10px;
+            margin-bottom: 10px;
+        }
+        .theme-selector {
+            margin-bottom: 20px;
+            text-align: right;
+        }
+        .theme-selector select {
+            padding: 5px;
+            border-radius: 5px;
+            border: 1px solid;
+            transition: background-color 0.3s, color 0.3s, border-color 0.3s;
+        }
+
+        /* Download Video Section */
+        .download-video {
+            margin-bottom: 20px;
+            display: flex;
+            gap: 10px;
+        }
+
+        .download-video input {
+            flex: 1;
+            padding: 10px;
+            border-radius: 5px;
+            border: 1px solid;
+            transition: background-color 0.3s, color 0.3s, border-color 0.3s;
+        }
+
+        .download-video button {
+            padding: 10px 15px;
+            border-radius: 5px;
+            border: 1px solid;
+            cursor: pointer;
+            transition: background-color 0.3s, color 0.3s, border-color 0.3s;
+        }
+
+        /* Spectrogram and Volume Indicator */
+        .spectrogram {
+            width: 100%;
+            height: 60px;
+            background-color: #000;
+            margin-top: 10px;
+            border-radius: 5px;
+        }
+
+        /* Updated Volume Indicator with Rainbow Gradient */
+        .volume-indicator {
+            width: 100%;
+            height: 10px;
+            background: linear-gradient(90deg, 
+                red, 
+                orange, 
+                yellow, 
+                green, 
+                blue, 
+                indigo, 
+                violet
+            );
+            margin-top: 10px;
+            border-radius: 5px;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .volume-level {
+            height: 100%;
+            background: rgba(255, 255, 255, 0.5); /* Semi-transparent white overlay */
+            width: 0%;
+            transition: width 0.2s ease;
+        }
+
+        /* Theme Styles */
+        .theme-dark-blue {
+            background-color: #1e1e2f;
+            color: #ffffff;
+        }
+        .theme-dark-blue .video-item {
+            background-color: #2a2a40;
+        }
+        .theme-dark-blue .search-bar input,
+        .theme-dark-blue .filters select,
+        .theme-dark-blue .download-video input,
+        .theme-dark-blue .download-video button,
+        .theme-dark-blue .pagination button {
+            background-color: #3a3a5a;
+            color: #ffffff;
+            border-color: #4a4a6a;
+        }
+
+        .theme-light {
+            background-color: #ffffff;
+            color: #000000;
+        }
+        .theme-light .video-item {
+            background-color: #f0f0f0;
+        }
+        .theme-light .search-bar input,
+        .theme-light .filters select,
+        .theme-light .download-video input,
+        .theme-light .download-video button,
+        .theme-light .pagination button {
+            background-color: #e0e0e0;
+            color: #000000;
+            border-color: #d0d0d0;
+        }
+
+        .theme-dark {
+            background-color: #121212;
+            color: #ffffff;
+        }
+        .theme-dark .video-item {
+            background-color: #1e1e1e;
+        }
+        .theme-dark .search-bar input,
+        .theme-dark .filters select,
+        .theme-dark .download-video input,
+        .theme-dark .download-video button,
+        .theme-dark .pagination button {
+            background-color: #2e2e2e;
+            color: #ffffff;
+            border-color: #3e3e3e;
+        }
+
+        .theme-ocean {
+            background-color: #1a1a2e;
+            color: #ffffff;
+        }
+        .theme-ocean .video-item {
+            background-color: #2a2a4a;
+        }
+        .theme-ocean .search-bar input,
+        .theme-ocean .filters select,
+        .theme-ocean .download-video input,
+        .theme-ocean .download-video button,
+        .theme-ocean .pagination button {
+            background-color: #3a3a5a;
+            color: #ffffff;
+            border-color: #4a4a6a;
+        }
+
+        .theme-sunset {
+            background-color: #2c1a1a;
+            color: #ffffff;
+        }
+        .theme-sunset .video-item {
+            background-color: #3c2a2a;
+        }
+        .theme-sunset .search-bar input,
+        .theme-sunset .filters select,
+        .theme-sunset .download-video input,
+        .theme-sunset .download-video button,
+        .theme-sunset .pagination button {
+            background-color: #4c3a3a;
+            color: #ffffff;
+            border-color: #5c4a4a;
+        }
+
+        .theme-forest {
+            background-color: #1a2c1a;
+            color: #ffffff;
+        }
+        .theme-forest .video-item {
+            background-color: #2a3c2a;
+        }
+        .theme-forest .search-bar input,
+        .theme-forest .filters select,
+        .theme-forest .download-video input,
+        .theme-forest .download-video button,
+        .theme-forest .pagination button {
+            background-color: #3a4c3a;
+            color: #ffffff;
+            border-color: #4a5c4a;
+        }
+
+        .theme-midnight {
+            background-color: #0a0a1a;
+            color: #ffffff;
+        }
+        .theme-midnight .video-item {
+            background-color: #1a1a2a;
+        }
+        .theme-midnight .search-bar input,
+        .theme-midnight .filters select,
+        .theme-midnight .download-video input,
+        .theme-midnight .download-video button,
+        .theme-midnight .pagination button {
+            background-color: #2a2a3a;
+            color: #ffffff;
+            border-color: #3a3a4a;
+        }
+
+        .theme-candy {
+            background-color: #2a1a2a;
+            color: #ffffff;
+        }
+        .theme-candy .video-item {
+            background-color: #3a2a3a;
+        }
+        .theme-candy .search-bar input,
+        .theme-candy .filters select,
+        .theme-candy .download-video input,
+        .theme-candy .download-video button,
+        .theme-candy .pagination button {
+            background-color: #4a3a4a;
+            color: #ffffff;
+            border-color: #5a4a5a;
+        }
+
+        .theme-cyberpunk {
+            background-color: #1a1a2a;
+            color: #00ff00;
+        }
+        .theme-cyberpunk .video-item {
+            background-color: #2a2a3a;
+        }
+        .theme-cyberpunk .search-bar input,
+        .theme-cyberpunk .filters select,
+        .theme-cyberpunk .download-video input,
+        .theme-cyberpunk .download-video button,
+        .theme-cyberpunk .pagination button {
+            background-color: #3a3a4a;
+            color: #00ff00;
+            border-color: #4a4a5a;
+        }
+
+        .theme-retro {
+            background-color: #2a1a1a;
+            color: #ffcc00;
+        }
+        .theme-retro .video-item {
+            background-color: #3a2a2a;
+        }
+        .theme-retro .search-bar input,
+        .theme-retro .filters select,
+        .theme-retro .download-video input,
+        .theme-retro .download-video button,
+        .theme-retro .pagination button {
+            background-color: #4a3a3a;
+            color: #ffcc00;
+            border-color: #5a4a4a;
+        }
+    </style>
+</head>
+<body class="theme-dark-blue">
+    <div class="container">
+        <!-- Theme Selector -->
+        <div class="theme-selector">
+            <label for="theme-select">Choose a theme:</label>
+            <select id="theme-select">
+                <option value="theme-dark-blue">Dark Blue</option>
+                <option value="theme-light">Light</option>
+                <option value="theme-dark">Dark</option>
+                <option value="theme-ocean">Ocean</option>
+                <option value="theme-sunset">Sunset</option>
+                <option value="theme-forest">Forest</option>
+                <option value="theme-midnight">Midnight</option>
+                <option value="theme-candy">Candy</option>
+                <option value="theme-cyberpunk">Cyberpunk</option>
+                <option value="theme-retro">Retro</option>
+            </select>
+        </div>
+
+        <h1>Local Video Browser</h1>
+        
+        <!-- Download Video Section -->
+        <div class="download-video">
+            <input type="text" id="video-url" placeholder="Enter video URL...">
+            <button id="download-video-button">Download Video</button>
+        </div>
+
+        <!-- Search Bar -->
+        <div class="search-bar">
+            <input type="text" id="search-input" placeholder="Search videos...">
+        </div>
+
+        <!-- Filters -->
+        <div class="filters">
+            <select id="sort-by-date">
+                <option value="newest">Newest First</option>
+                <option value="oldest">Oldest First</option>
+            </select>
+            <select id="videos-per-page">
+                <option value="5">5 per page</option>
+                <option value="10">10 per page</option>
+                <option value="20">20 per page</option>
+                <option value="50">50 per page</option>
+                <option value="100">100 per page</option>
+            </select>
+        </div>
+
+        <!-- Video List -->
+        <div class="video-list" id="video-list">
+            <!-- Video items will be dynamically added here -->
+        </div>
+
+        <!-- Loading Spinner -->
+        <div class="loading-spinner" id="loading-spinner">
+            <div class="spinner"></div>
+        </div>
+
+        <!-- Error Message -->
+        <div class="error-message" id="error-message"></div>
+
+        <!-- Pagination -->
+        <div class="pagination" id="pagination">
+            <button id="prev-page" disabled>Previous</button>
+            <button id="next-page" disabled>Next</button>
+        </div>
+    </div>
+
+    <script>
+        // Theme Selector
+        const themeSelect = document.getElementById('theme-select');
+        themeSelect.addEventListener('change', (e) => {
+            document.body.className = e.target.value;
+        });
+
+        // Download Video Button
+        document.getElementById('download-video-button').addEventListener('click', async () => {
+            const videoUrl = document.getElementById('video-url').value;
+            console.log('Download Video Button Clicked. Video URL:', videoUrl); // Debug log
+
+            if (!videoUrl) {
+                alert('Please enter a valid video URL.');
+                return;
+            }
+
+            try {
+                console.log('Sending POST request to /download with URL:', videoUrl); // Debug log
+                const response = await fetch('/download', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ url: videoUrl }),
+                });
+
+                console.log('Response received:', response); // Debug log
+
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+
+                const result = await response.json();
+                console.log('Response JSON:', result); // Debug log
+
+                if (result.success) {
+                    alert('Video download started!');
+                    // Reload the video list after a short delay to allow the server to save the video
+                    setTimeout(() => {
+                        loadVideos();
+                    }, 2000); // 2-second delay
+                } else {
+                    alert('Failed to download video: ' + result.message);
+                }
+            } catch (error) {
+                console.error('Error downloading video:', error);
+                alert('Failed to download video. Please try again.');
+            }
+        });
+
+        // Load videos on page load
+        let allVideos = [];
+        let currentPage = 1;
+        let videosPerPage = 10; // Default number of videos per page
+
+        // Function to update the number of videos per page
+        function updateVideosPerPage() {
+            const videosPerPageSelect = document.getElementById('videos-per-page');
+            videosPerPage = parseInt(videosPerPageSelect.value);
+            currentPage = 1; // Reset to the first page
+            displayVideos(allVideos);
+            updatePagination();
+        }
+
+        // Add event listener for the videos per page dropdown
+        document.getElementById('videos-per-page').addEventListener('change', updateVideosPerPage);
+
+        async function loadVideos() {
+            const videoList = document.getElementById('video-list');
+            const loadingSpinner = document.getElementById('loading-spinner');
+            const errorMessage = document.getElementById('error-message');
+
+            loadingSpinner.classList.add('visible');
+            errorMessage.textContent = '';
+
+            try {
+                console.log('Loading videos...'); // Debug log
+                const response = await fetch('/videos');
+                console.log('Videos response:', response); // Debug log
+
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                const videos = await response.json();
+                console.log("Videos fetched:", videos); // Debug log
+
+                allVideos = videos;
+                displayVideos(allVideos);
+                updatePagination();
+
+            } catch (error) {
+                console.error('Error loading videos:', error);
+                errorMessage.textContent = 'Failed to load videos. Please try again later.';
+            } finally {
+                loadingSpinner.classList.remove('visible');
+            }
+        }
+
+        function displayVideos(videos) {
+            const videoList = document.getElementById('video-list');
+            videoList.innerHTML = '';
+
+            const startIndex = (currentPage - 1) * videosPerPage;
+            const endIndex = startIndex + videosPerPage;
+            const videosToShow = videos.slice(startIndex, endIndex);
+
+            videosToShow.forEach(video => {
+                const videoItem = document.createElement('div');
+                videoItem.className = 'video-item';
+
+                const videoElement = document.createElement('video');
+                videoElement.controls = true;
+                videoElement.src = video.url;
+
+                // Create the spectrogram canvas
+                const spectrogramCanvas = document.createElement('canvas');
+                spectrogramCanvas.className = 'spectrogram';
+                videoItem.appendChild(spectrogramCanvas);
+
+                // Create the volume indicator
+                const volumeIndicator = document.createElement('div');
+                volumeIndicator.className = 'volume-indicator';
+                const volumeLevel = document.createElement('div');
+                volumeLevel.className = 'volume-level';
+                volumeIndicator.appendChild(volumeLevel);
+                videoItem.appendChild(volumeIndicator);
+
+                // Update the volume indicator when the volume changes
+                videoElement.addEventListener('volumechange', () => {
+                    const volume = videoElement.volume;
+                    volumeLevel.style.width = `${volume * 100}%`;
+                });
+
+                // Analyze audio and draw spectrogram
+                const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                const analyser = audioContext.createAnalyser();
+                const source = audioContext.createMediaElementSource(videoElement);
+                source.connect(analyser);
+                analyser.connect(audioContext.destination);
+                analyser.fftSize = 256;
+
+                const bufferLength = analyser.frequencyBinCount;
+                const dataArray = new Uint8Array(bufferLength);
+
+                const canvasCtx = spectrogramCanvas.getContext('2d');
+                const width = spectrogramCanvas.width;
+                const height = spectrogramCanvas.height;
+
+                function drawSpectrogram() {
+                    requestAnimationFrame(drawSpectrogram);
+
+                    analyser.getByteFrequencyData(dataArray);
+
+                    canvasCtx.fillStyle = 'rgb(0, 0, 0)';
+                    canvasCtx.fillRect(0, 0, width, height);
+
+                    const barWidth = (width / bufferLength) * 2.5;
+                    let barHeight;
+                    let x = 0;
+
+                    for (let i = 0; i < bufferLength; i++) {
+                        barHeight = dataArray[i] / 2;
+
+                        // Calculate a rainbow color based on the frequency index
+                        const hue = (i / bufferLength) * 360; // Map index to hue (0-360)
+                        canvasCtx.fillStyle = `hsl(${hue}, 100%, 50%)`; // Use HSL for rainbow colors
+
+                        canvasCtx.fillRect(x, height - barHeight, barWidth, barHeight);
+
+                        x += barWidth + 1;
+                    }
+                }
+
+                drawSpectrogram();
+
+                const videoName = document.createElement('p');
+                videoName.textContent = video.name;
+
+                videoItem.appendChild(videoElement);
+                videoItem.appendChild(videoName);
+                videoList.appendChild(videoItem);
+            });
+        }
+
+        function updatePagination() {
+            const prevButton = document.getElementById('prev-page');
+            const nextButton = document.getElementById('next-page');
+
+            prevButton.disabled = currentPage === 1;
+            nextButton.disabled = currentPage * videosPerPage >= allVideos.length;
+        }
+
+        // Pagination event listeners
+        document.getElementById('prev-page').addEventListener('click', () => {
+            if (currentPage > 1) {
+                currentPage--;
+                displayVideos(allVideos);
+                updatePagination();
+            }
+        });
+
+        document.getElementById('next-page').addEventListener('click', () => {
+            if (currentPage * videosPerPage < allVideos.length) {
+                currentPage++;
+                displayVideos(allVideos);
+                updatePagination();
+            }
+        });
+
+        window.onload = loadVideos;
+    </script>
+</body>
+</html>
