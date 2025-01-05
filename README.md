@@ -24,7 +24,7 @@ type in terminal:
 git clone https://github.com/jelspace/browser.c 
 
 enter dir:
-cd browser
+cd browser.c
 
 compile with:
  ./compile.sh
