@@ -26,7 +26,7 @@ gcc -o browser main.c main_frame.c bookmarks.c keys.c main_menu.c server.c -Wall
 then create video dir:
 mkdir videos
 
-and run 'browser'
+and run 'browser':
 ./browser
 
 To compile and run the browser application from scratch on a newly installed Linux system, you need to install several dependencies. Below is a list of all the requirements and the steps to install them.
