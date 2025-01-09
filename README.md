@@ -39,7 +39,11 @@ and run 'browser':
 ./browser
 
 You can install missing libraries using your package manager (e.g., apt on Debian/Ubuntu, dnf on Fedora). For example:
+
+
 sudo apt install libwebkit2gtk-4.0-37 libgtk-3-0 libgstreamer1.0-0
+
+
 If any of these libraries are missing or incompatible, the browser may fail to run. 
 
 To compile and run the browser application from scratch on a newly installed Linux system, you need to install several dependencies. Below is a list of all the requirements and the steps to install them.
