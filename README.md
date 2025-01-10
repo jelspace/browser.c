@@ -44,7 +44,7 @@ mkdir videos
 and run 'browser':
 ./browser
 
-You can install missing libraries using your package manager (e.g., apt on Debian/Ubuntu, dnf on Fedora). For example:
+You can install missing libraries using your package manager (e.g., apt on Debian/Ubuntu, dnf on Fedora).
 
 check_libs.sh file is automated script that will check which required libs are installed in your system
 
