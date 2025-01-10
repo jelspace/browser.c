@@ -15,7 +15,7 @@ keys:
 [ctrl]+r reload page
 
 
-Tested on Linux 
+Tested on Linux and Termux with vncserver in Android
 
 screen from firefox
 https://github.com/jelspace/browser.c/blob/main/Screenshot%20from%202025-01-05%2009-01-29.png
@@ -25,6 +25,10 @@ git clone https://github.com/jelspace/browser.c
 
 enter dir:
 cd browser.c
+
+change permisions of 'make' file and 'compile.sh' file to make them executable:
+ chmod +x make  
+ chmod +x compile.sh
 
 compile with:
  ./compile.sh
@@ -39,10 +43,6 @@ and run 'browser':
 ./browser
 
 You can install missing libraries using your package manager (e.g., apt on Debian/Ubuntu, dnf on Fedora). For example:
-
-
-sudo apt install libwebkit2gtk-4.0-37 libgtk-3-0 libgstreamer1.0-0
-
 
 If any of these libraries are missing or incompatible, the browser may fail to run. 
 
