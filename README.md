@@ -13,6 +13,7 @@ keys:
 [ctrl]+t new tab
 [ctrl]+w close tab
 [ctrl]+r reload page
+[ctrl]+q quit browser
 
 
 Tested on Linux , Termux with vncserver in Android
