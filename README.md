@@ -15,7 +15,7 @@ keys:
 [ctrl]+r reload page
 
 
-Tested on Linux and Termux with vncserver in Android
+Tested on Linux , Termux with vncserver in Android
 
 screen from firefox
 https://github.com/jelspace/browser.c/blob/main/Screenshot%20from%202025-01-05%2009-01-29.png
