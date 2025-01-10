@@ -3,7 +3,7 @@ coder:deepseek v3
 
 www browser/webkit/ and local video server
 
-access in any other web browser at:
+allow access in any other web browser at:
 localhost:8000
 
 many things not work bookmarks,download yt video from html
@@ -45,6 +45,13 @@ and run 'browser':
 ./browser
 
 You can install missing libraries using your package manager (e.g., apt on Debian/Ubuntu, dnf on Fedora). For example:
+
+check_libs.sh file is automated script that will check which required libs are installed in your system
+
+first make script executable: chmod +x check_libs.sh
+
+then run test: ./check_libs.sh browser 
+
 
 If any of these libraries are missing or incompatible, the browser may fail to run. 
 
