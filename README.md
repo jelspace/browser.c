@@ -36,6 +36,7 @@ compile with:
  or
  ./make
  ("./make" is different than "make")
+'compile.sh' work with webkit2gtk 4.0 and 4.1,'make' only with 4.0
 
 then create video dir:
 mkdir videos
