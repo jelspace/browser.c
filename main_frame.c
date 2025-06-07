@@ -5,6 +5,67 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <ctype.h> // For isprint
+
+// Basic URL validation. Returns 1 if potentially safe, 0 otherwise.
+static int is_safe_url_for_system_call(const char *url, GtkWidget *parent_window) {
+    if (url == NULL || url[0] == '\0') {
+        fprintf(stderr, "is_safe_url_for_system_call: Validation failed: URL is null or empty.\n");
+        GtkWidget *error_dialog = gtk_message_dialog_new(GTK_WINDOW(parent_window),
+                                                         GTK_DIALOG_DESTROY_WITH_PARENT,
+                                                         GTK_MESSAGE_ERROR,
+                                                         GTK_BUTTONS_OK,
+                                                         "Invalid URL: URL is empty.");
+        gtk_dialog_run(GTK_DIALOG(error_dialog));
+        gtk_widget_destroy(error_dialog);
+        return 0;
+    }
+
+    if (strlen(url) > 2048) { // Max reasonable length for a URL
+        fprintf(stderr, "is_safe_url_for_system_call: Validation failed: URL too long (max 2048).\n");
+        GtkWidget *error_dialog = gtk_message_dialog_new(GTK_WINDOW(parent_window),
+                                                         GTK_DIALOG_DESTROY_WITH_PARENT,
+                                                         GTK_MESSAGE_ERROR,
+                                                         GTK_BUTTONS_OK,
+                                                         "Invalid URL: URL is too long (max 2048 characters).");
+        gtk_dialog_run(GTK_DIALOG(error_dialog));
+        gtk_widget_destroy(error_dialog);
+        return 0;
+    }
+
+    if (strncmp(url, "http://", 7) != 0 && strncmp(url, "https://", 8) != 0) {
+        fprintf(stderr, "is_safe_url_for_system_call: Validation failed: URL scheme not http:// or https://.\n");
+        GtkWidget *error_dialog = gtk_message_dialog_new(GTK_WINDOW(parent_window),
+                                                         GTK_DIALOG_DESTROY_WITH_PARENT,
+                                                         GTK_MESSAGE_ERROR,
+                                                         GTK_BUTTONS_OK,
+                                                         "Invalid URL: Must start with http:// or https://.");
+        gtk_dialog_run(GTK_DIALOG(error_dialog));
+        gtk_widget_destroy(error_dialog);
+        return 0;
+    }
+
+    const char *ptr = url;
+    char problematic_char[2] = {0};
+    while (*ptr) {
+        if (!isprint((unsigned char)*ptr) || *ptr == '`' || *ptr == '|' || *ptr == ';') {
+            problematic_char[0] = *ptr;
+            fprintf(stderr, "is_safe_url_for_system_call: Validation failed: URL contains non-printable or disallowed character (ASCII %d '%c').\n", (int)*ptr, *ptr);
+            GtkWidget *error_dialog = gtk_message_dialog_new(GTK_WINDOW(parent_window),
+                                                             GTK_DIALOG_DESTROY_WITH_PARENT,
+                                                             GTK_MESSAGE_ERROR,
+                                                             GTK_BUTTONS_OK,
+                                                             "Invalid URL: Contains non-printable or disallowed character: %s (ASCII %d)",
+                                                             problematic_char, (int)*ptr);
+            gtk_dialog_run(GTK_DIALOG(error_dialog));
+            gtk_widget_destroy(error_dialog);
+            return 0;
+        }
+        ptr++;
+    }
+    return 1; // Seems okay
+}
+
 
 // Callback for the "Back" button
 void back_button_callback(GtkWidget *widget, gpointer data) {
@@ -40,9 +101,24 @@ void download_video_callback(GtkWidget *widget, gpointer data) {
     WebKitWebView *web_view = WEBKIT_WEB_VIEW(g_object_get_data(G_OBJECT(current_page), "web_view"));
 
     const char *url = webkit_web_view_get_uri(web_view);
+    GtkWidget *toplevel_window = gtk_widget_get_toplevel(widget);
 
-    if (strstr(url, "youtube.com") == NULL && strstr(url, "youtu.be") == NULL) {
-        printf("This feature is only available for YouTube videos.\n");
+
+    if (url == NULL || (strstr(url, "youtube.com") == NULL && strstr(url, "youtu.be") == NULL)) {
+        // Show some error or notification if not a YouTube URL, or if URL is NULL
+        GtkWidget *info_dialog = gtk_message_dialog_new(GTK_WINDOW(toplevel_window),
+                                                        GTK_DIALOG_DESTROY_WITH_PARENT,
+                                                        GTK_MESSAGE_INFO,
+                                                        GTK_BUTTONS_OK,
+                                                        "Download feature is intended for YouTube videos. Current URL: %s", url ? url : "None");
+        gtk_dialog_run(GTK_DIALOG(info_dialog));
+        gtk_widget_destroy(info_dialog);
+        return;
+    }
+
+    // Validate the URL before proceeding
+    if (!is_safe_url_for_system_call(url, toplevel_window)) {
+        // Error message is shown by is_safe_url_for_system_call
         return;
     }
 
@@ -59,15 +135,35 @@ void download_video_callback(GtkWidget *widget, gpointer data) {
 
     if (gtk_dialog_run(GTK_DIALOG(dialog)) == GTK_RESPONSE_ACCEPT) {
         char *filename = gtk_file_chooser_get_filename(GTK_FILE_CHOOSER(dialog));
-        char command[1024];
-        snprintf(command, sizeof(command), "yt-dlp -o \"%s\" \"%s\"", filename, url);
-        int result = system(command);
-        if (result == 0) {
-            printf("Video downloaded successfully: %s\n", filename);
-        } else {
-            printf("Failed to download video.\n");
+        if (filename) { // filename can be NULL if user cancels or there's an error
+            char command[1024];
+            // The format string for snprintf ALREADY quotes filename and url with \"%s\". This is crucial.
+            snprintf(command, sizeof(command), "yt-dlp --restrict-filenames -o \"%s\" \"%s\"", filename, url);
+
+            fprintf(stderr, "Executing command: %s\n", command); // Log command for debugging
+            int result = system(command);
+
+            GtkMessageType message_type = GTK_MESSAGE_ERROR;
+            char *message_format = "Failed to download video.";
+            if (result == 0) {
+                message_type = GTK_MESSAGE_INFO;
+                message_format = "Video downloaded successfully to: %s";
+            } else if (result == -1) {
+                 message_format = "Failed to execute download command (system call error).";
+            } else {
+                 message_format = "Video download command failed (exit code %d). Check logs for details.";
+            }
+
+            GtkWidget *result_dialog = gtk_message_dialog_new(GTK_WINDOW(toplevel_window),
+                                                              GTK_DIALOG_DESTROY_WITH_PARENT,
+                                                              message_type,
+                                                              GTK_BUTTONS_OK,
+                                                              message_format,
+                                                              result == 0 ? filename : (result == -1 ? "" : (void*)&result)); // Slightly hacky to pass exit code
+            gtk_dialog_run(GTK_DIALOG(result_dialog));
+            gtk_widget_destroy(result_dialog);
+            g_free(filename);
         }
-        g_free(filename);
     }
 
     gtk_widget_destroy(dialog);
@@ -176,8 +272,8 @@ GtkWidget *create_main_frame(GtkNotebook *notebook) {
 
     // Create the "Star" button (for bookmarks)
     GtkWidget *star_button = gtk_button_new_with_label("Star");
-    g_signal_connect(star_button, "clicked", G_CALLBACK(star_button_callback), NULL);
     gtk_box_pack_start(GTK_BOX(hbox), star_button, FALSE, FALSE, 0);
+    g_signal_connect(star_button, "clicked", G_CALLBACK(star_button_callback), url_entry);
 
     // Create the URL entry
     GtkWidget *url_entry = gtk_entry_new();
